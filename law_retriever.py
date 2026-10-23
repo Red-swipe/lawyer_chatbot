@@ -1,4 +1,5 @@
 import os
+import re
 from typing import List, Dict, Optional
 import chromadb
 from sentence_transformers import SentenceTransformer
@@ -57,29 +58,49 @@ class LawRetriever:
             return []
 
         try:
+            hits: List[Dict[str, str]] = []
+            seen_articles = set()
+
+            # If user explicitly asks for a specific article, prioritize exact match
+            art_match = re.search(r"\barticle\s*(\d+[a-z]?)\b", user_question, re.IGNORECASE)
+            if art_match:
+                art_num = art_match.group(1).upper()
+                exact_res = self._collection.get(where={"article": f"Article {art_num}"})
+                if exact_res and exact_res.get("documents"):
+                    for doc, meta in zip(exact_res["documents"], exact_res["metadatas"]):
+                        art_name = meta.get("article", "")
+                        seen_articles.add(art_name)
+                        hits.append({
+                            "article": art_name,
+                            "title": meta.get("title", ""),
+                            "text": meta.get("raw_text") or doc,
+                        })
+
+            # Perform semantic vector search
             query_embedding = self.model.encode(user_question, show_progress_bar=False).tolist()
             results = self._collection.query(
                 query_embeddings=[query_embedding],
                 n_results=top_k,
             )
 
-            hits: List[Dict[str, str]] = []
             if results and results.get("documents") and results["documents"]:
                 docs = results["documents"][0]
                 metas = results["metadatas"][0] if results.get("metadatas") else []
 
                 for i, doc in enumerate(docs):
                     meta = metas[i] if i < len(metas) else {}
-                    article = meta.get("article", "")
-                    title = meta.get("title", "")
-                    text = meta.get("raw_text") or doc
+                    art_name = meta.get("article", "")
+                    if art_name not in seen_articles:
+                        seen_articles.add(art_name)
+                        hits.append({
+                            "article": art_name,
+                            "title": meta.get("title", ""),
+                            "text": meta.get("raw_text") or doc,
+                        })
+                    if len(hits) >= top_k:
+                        break
 
-                    hits.append({
-                        "article": article,
-                        "title": title,
-                        "text": text,
-                    })
-            return hits
+            return hits[:top_k]
         except Exception as e:
             print(f"Error querying legal vector database: {e}")
             return []
