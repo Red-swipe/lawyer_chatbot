@@ -1,6 +1,29 @@
 import sys
+import time
 from memory import ConversationMemory
 from chatbot import LawyerChatbot
+
+
+def loading_animation(duration: float) -> None:
+    frames = ["   ", ".  ", ".. ", "..."]
+    end_time = time.time() + duration
+    while time.time() < end_time:
+        for frame in frames:
+            sys.stdout.write(f"\r{frame}")
+            sys.stdout.flush()
+            time.sleep(0.2)
+    sys.stdout.write("\r   \r")
+    sys.stdout.flush()
+
+
+def get_animation_duration(response_text: str) -> float:
+    length = len(response_text)
+    if length < 50:
+        return 0.5
+    elif length <= 150:
+        return 1.0
+    else:
+        return 1.5
 
 
 def main() -> None:
@@ -31,6 +54,8 @@ def main() -> None:
                 break
 
             response = chatbot.process_input(user_input)
+            duration = get_animation_duration(response)
+            loading_animation(duration)
             print(f"AI: {response}")
 
         except (KeyboardInterrupt, EOFError):
