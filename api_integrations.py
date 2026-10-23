@@ -46,7 +46,7 @@ def get_news(query: str = "pakistan") -> str:
 
 
 def is_law_question(user_input: str) -> bool:
-    """Returns True if input mentions law/legal/constitution/article, else False."""
-    keywords = ["law", "legal", "constitution", "article"]
+    """Returns True if input mentions law/legal/constitution/article/rights, else False."""
+    keywords = ["law", "legal", "constitution", "article", "fundamental right", "right"]
     lowered = user_input.lower()
     return any(keyword in lowered for keyword in keywords)

@@ -4,6 +4,7 @@ from typing import Optional
 from groq import Groq
 
 from memory import ConversationMemory
+from law_retriever import LawRetriever
 from api_integrations import (
     get_current_time,
     get_current_date,
@@ -57,6 +58,7 @@ class LawyerChatbot:
         self.api_key: str = groq_key or load_groq_api_key()
         self.model: str = model
         self.client: Groq = Groq(api_key=self.api_key)
+        self.law_retriever: LawRetriever = LawRetriever()
 
     def _is_greeting(self, text: str) -> bool:
         """Determines if the user input is a greeting."""
@@ -119,9 +121,50 @@ class LawyerChatbot:
             self.memory.add_message("assistant", response)
             return response
 
-        # 5. Check if it's a law question -> return law building disclaimer
+        # 5. Check if it's a law question
         if is_law_question(user_input):
-            response = "I don't have law knowledge yet, but I'm building it"
+            if not self.law_retriever.is_available():
+                response = "My law knowledge base is still being built. Ask me again soon."
+                self.memory.add_message("assistant", response)
+                return response
+
+            chunks = self.law_retriever.query(user_input)
+            formatted_chunks = [
+                f"[{c.get('article', '')} - {c.get('title', '')}]\n{c.get('text', '')}"
+                for c in chunks
+            ]
+            context = "\n\n".join(formatted_chunks)
+
+            legal_system_prompt = (
+                f"{SYSTEM_PROMPT}\n\n"
+                "Use ONLY the following legal text to answer. Quote article numbers. Be concise.\n"
+                f"Legal context:\n{context}"
+            )
+
+            messages = [
+                {"role": "system", "content": legal_system_prompt}
+            ]
+            messages.extend(self.memory.get_history())
+
+            try:
+                chat_completion = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    temperature=0.7,
+                )
+                response = chat_completion.choices[0].message.content or ""
+            except Exception as e:
+                # Fall back if specified model is decommissioned or unavailable
+                if "model_decommissioned" in str(e) or "does not exist" in str(e) or "model_not_found" in str(e):
+                    chat_completion = self.client.chat.completions.create(
+                        model=FALLBACK_MODEL,
+                        messages=messages,
+                        temperature=0.7,
+                    )
+                    response = chat_completion.choices[0].message.content or ""
+                else:
+                    raise e
+
             self.memory.add_message("assistant", response)
             return response
 
