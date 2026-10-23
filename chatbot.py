@@ -91,7 +91,7 @@ class LawyerChatbot:
             if "how are you" in lowered:
                 response = "I'm doing well, thank you! How can I help?"
             else:
-                response = "Hello! How can I help?"
+                response = "Hey! What can I help you with?"
             self.memory.add_message("assistant", response)
             return response
 
@@ -101,11 +101,11 @@ class LawyerChatbot:
             self.memory.add_message("assistant", response)
             return response
         if "time" in lowered:
-            response = f"It's {get_current_time()}"
+            response = f"It's {get_current_time()}."
             self.memory.add_message("assistant", response)
             return response
         if "date" in lowered:
-            response = f"Today is {get_current_date()}"
+            response = f"Today is {get_current_date()}."
             self.memory.add_message("assistant", response)
             return response
         if "news" in lowered:
@@ -113,13 +113,19 @@ class LawyerChatbot:
             self.memory.add_message("assistant", response)
             return response
 
-        # 4. Check if it's a law question -> return law building disclaimer
+        # 4. Check if asked about capabilities
+        if any(p in lowered for p in ["what can u do", "what can you do"]):
+            response = "I'm Solon, your Pakistani legal AI. I can chat, answer general questions, check the time and news, and soon I'll have full knowledge of Pakistani law."
+            self.memory.add_message("assistant", response)
+            return response
+
+        # 5. Check if it's a law question -> return law building disclaimer
         if is_law_question(user_input):
             response = "I don't have law knowledge yet, but I'm building it"
             self.memory.add_message("assistant", response)
             return response
 
-        # 5. Otherwise -> send to Groq
+        # 6. Otherwise -> send to Groq
         messages = [
             {"role": "system", "content": SYSTEM_PROMPT}
         ]

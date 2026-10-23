@@ -42,7 +42,7 @@ def main() -> None:
         except AttributeError:
             pass
 
-    print("Pakistani Law Chatbot CLI")
+    print("Solon — AI Legal Assistant for Pakistan")
     print("Type 'exit' or 'quit' to end the conversation.\n")
 
     try:
@@ -64,13 +64,13 @@ def main() -> None:
             response = chatbot.process_input(user_input)
             duration = get_animation_duration(response)
             loading_animation(duration)
-            stream_print(f"AI: {response}")
+            stream_print(f"Solon: {response}")
 
         except (KeyboardInterrupt, EOFError):
             print()
             break
         except Exception as e:
-            print(f"AI: An error occurred: {e}. Please try again.")
+            print(f"Solon: An error occurred: {e}. Please try again.")
 
 
 if __name__ == "__main__":

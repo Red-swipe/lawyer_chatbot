@@ -1,3 +1,3 @@
-# Lawyer Chatbot
+# Solon — AI Legal Assistant for Pakistan
 
-A CLI law chatbot application for Pakistan legal queries and assistance.
+Solon — AI Legal Assistant for Pakistan. A CLI law chatbot for Pakistan.
