@@ -16,6 +16,14 @@ def loading_animation(duration: float) -> None:
     sys.stdout.flush()
 
 
+def stream_print(text: str) -> None:
+    for char in text:
+        sys.stdout.write(char)
+        sys.stdout.flush()
+        time.sleep(0.015)
+    print()
+
+
 def get_animation_duration(response_text: str) -> float:
     length = len(response_text)
     if length < 50:
@@ -56,7 +64,7 @@ def main() -> None:
             response = chatbot.process_input(user_input)
             duration = get_animation_duration(response)
             loading_animation(duration)
-            print(f"AI: {response}")
+            stream_print(f"AI: {response}")
 
         except (KeyboardInterrupt, EOFError):
             print()
