@@ -7,3 +7,7 @@ __pycache__/
 .env
 groq_api.txt
 groq api.txt
+
+# Data files
+law_data/*
+!law_data/.gitkeep
